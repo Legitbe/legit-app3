@@ -4,8 +4,6 @@ import {
   Sparkles,
   Send,
   Newspaper,
-  BookOpen,
-  Search,
   User as UserIcon,
   Plane,
 } from "lucide-react";
@@ -112,46 +110,8 @@ interface ImpactItem {
   type: "gain" | "loss";
 }
 
-const ImpactCard = ({
-  title,
-  items,
-}: {
-  title: string;
-  items: ImpactItem[];
-}) => (
-  <div className="bg-white shadow-sm rounded-2xl p-4 border border-slate-200">
-    <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-      {title}
-    </h3>
-    <div className="space-y-2.5">
-      {items.map((it) => (
-        <div key={it.label} className="flex items-baseline justify-between">
-          <span className="text-xs text-slate-600">{it.label}</span>
-          <span
-            className={`text-lg font-bold ${
-              it.type === "gain" ? "text-emerald-600" : "text-rose-600"
-            }`}
-          >
-            {it.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const ImpactSection = () => (
-  <section className="mt-2">
-    <h2 className="text-sm font-bold text-slate-900 mb-3">Mon Bilan</h2>
-    <div className="grid grid-cols-2 gap-3">
-      <ImpactCard title="Mon Quotidien" items={DATA.impact.perso} />
-      <ImpactCard title="Ma Belgique" items={DATA.impact.belgique} />
-    </div>
-  </section>
-);
-
 const RecapCard = () => (
-  <section className="mt-6">
+  <section className="mt-4">
     <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-[#b90051] via-fuchsia-600 to-blue-600 shadow-lg">
       {/* Decorative blobs */}
       <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -167,13 +127,58 @@ const RecapCard = () => (
 
         <p className="mt-3 text-white text-2xl font-bold leading-tight">
           Tu as pesé sur{" "}
-          <span className="text-3xl">4 décisions</span> majeures cette semaine.
+          <span className="text-3xl">{DATA.votes.length} décisions</span> cette semaine.
         </p>
 
-        <div className="mt-4 flex items-center gap-2">
-          <span className="text-xs text-white/80">Ton thème fort</span>
-          <span className="text-xs font-bold text-white bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+        {/* Bilan d'impact */}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3">
+            <p className="text-[10px] font-semibold text-white/80 uppercase tracking-wide mb-2">
+              Mon Quotidien
+            </p>
+            <div className="space-y-1.5">
+              {DATA.impact.perso.map((it) => (
+                <div key={it.label} className="flex items-baseline justify-between gap-1">
+                  <span className="text-[10px] text-white/80 truncate">{it.label}</span>
+                  <span
+                    className={`text-sm font-bold ${
+                      it.type === "gain" ? "text-emerald-300" : "text-rose-200"
+                    }`}
+                  >
+                    {it.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3">
+            <p className="text-[10px] font-semibold text-white/80 uppercase tracking-wide mb-2">
+              Ma Belgique
+            </p>
+            <div className="space-y-1.5">
+              {DATA.impact.belgique.map((it) => (
+                <div key={it.label} className="flex items-baseline justify-between gap-1">
+                  <span className="text-[10px] text-white/80 truncate">{it.label}</span>
+                  <span
+                    className={`text-sm font-bold ${
+                      it.type === "gain" ? "text-emerald-300" : "text-rose-200"
+                    }`}
+                  >
+                    {it.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats clés */}
+        <div className="mt-4 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-bold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full">
             ⚡ {DATA.recap.topTheme}
+          </span>
+          <span className="text-[11px] font-bold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full">
+            📨 {DATA.votes.length} avis envoyés
           </span>
         </div>
 
@@ -258,8 +263,6 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const items = [
     { key: "actu", label: "Actu", Icon: Newspaper, to: "/" },
-    { key: "approfondir", label: "Approfondir", Icon: BookOpen, to: "/approfondir" },
-    { key: "recherche", label: "Recherche", Icon: Search, to: "/" },
     { key: "profil", label: "Profil", Icon: UserIcon, to: "/profil", active: true },
   ];
 
@@ -313,7 +316,6 @@ const Profil = () => {
     <main className="min-h-[100dvh] w-full bg-slate-100 flex justify-center">
       <div className="relative w-full max-w-[430px] min-h-[100dvh] bg-slate-50 px-4 pb-24">
         <Header />
-        <ImpactSection />
         <RecapCard />
         <VotesSection />
         <SavedSection />
