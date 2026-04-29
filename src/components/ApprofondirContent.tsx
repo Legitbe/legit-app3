@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +35,8 @@ export interface ApprofondirData {
     max: number;
     impactMoi: { base: number; metric: string; desc: string };
     impactBelgique: { base: number; metric: string; desc: string };
+    redistribution?: string;
+    anglesMorts?: string[];
   };
 }
 
@@ -229,6 +232,29 @@ const Simulator = ({ data }: { data: ApprofondirData }) => {
           <span className="text-sm text-gray-500">/ {display.metric}</span>
         </div>
         <p className="text-sm text-gray-700 mt-3 leading-snug">{display.desc}</p>
+
+        {tab === "be" && (sim.redistribution || (sim.anglesMorts && sim.anglesMorts.length > 0)) && (
+          <div className="mt-4 space-y-3">
+            {sim.redistribution && (
+              <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm">
+                {sim.redistribution}
+              </div>
+            )}
+            {sim.anglesMorts && sim.anglesMorts.length > 0 && (
+              <div className="mt-3 border-t border-dashed border-gray-200 pt-3 text-xs text-gray-500">
+                <div className="flex items-center gap-1.5 mb-1.5 font-medium text-gray-600">
+                  <AlertCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  <span>Angles morts</span>
+                </div>
+                <ul className="space-y-1 pl-5 list-disc">
+                  {sim.anglesMorts.map((a, i) => (
+                    <li key={i}>{a}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex items-end justify-between mt-5">
           <div>
