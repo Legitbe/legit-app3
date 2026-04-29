@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PageTransition } from "@/components/PageTransition";
 import Index from "./pages/Index.tsx";
-import Approfondir from "./pages/Approfondir.tsx";
 import Profil from "./pages/Profil.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -22,14 +21,6 @@ const AnimatedRoutes = () => {
           element={
             <PageTransition>
               <Index />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/approfondir"
-          element={
-            <PageTransition>
-              <Approfondir />
             </PageTransition>
           }
         />

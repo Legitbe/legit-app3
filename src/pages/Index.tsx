@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Newspaper, Search, User } from "lucide-react";
+import { Newspaper, User } from "lucide-react";
 import {
   ApprofondirContent,
   type ApprofondirData,
@@ -107,8 +107,6 @@ const FEED: ApprofondirData[] = [
 
 const NAV_ITEMS = [
   { key: "actu", label: "Actu", Icon: Newspaper, to: "/" },
-  { key: "approfondir", label: "Approfondir", Icon: BookOpen, to: "/approfondir" },
-  { key: "recherche", label: "Recherche", Icon: Search, to: "/" },
   { key: "profil", label: "Profil", Icon: User, to: "/profil" },
 ];
 
