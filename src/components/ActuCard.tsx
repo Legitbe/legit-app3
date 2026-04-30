@@ -335,13 +335,13 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
 
   return (
     <div className="bg-white border border-slate-100 rounded-lg mx-1 p-3 mt-3">
-      <div className="inline-flex bg-slate-100 rounded-full p-0.5">
+      <div className="grid grid-cols-2 bg-slate-100 rounded-full p-0.5 w-full">
         {(["moi", "be"] as const).map((k) => (
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`text-xs px-3 py-1.5 rounded-full transition ${
-              tab === k ? "bg-white shadow-sm text-slate-900 font-medium" : "text-slate-600"
+            className={`text-xs px-3 py-1.5 rounded-full transition text-center ${
+              tab === k ? "bg-white shadow-sm text-slate-900 font-semibold" : "text-slate-600"
             }`}
           >
             {k === "moi" ? "Pour moi" : "Pour la Belgique"}
@@ -375,7 +375,13 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
           </div>
         ) : (
           <div className="space-y-2 text-slate-700">
-            <div className="text-sm font-medium">{belgique.budget}</div>
+            <div
+              className={`text-2xl font-bold ${
+                /[−-]/.test(belgique.budget.trim().charAt(0)) ? "text-rose-600" : "text-emerald-600"
+              }`}
+            >
+              {belgique.budget}
+            </div>
             <div className="text-sm">{renderRedistribution(belgique.redistribution)}</div>
             {belgique.angles_morts?.length > 0 && (
               <div className="pt-1">
