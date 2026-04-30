@@ -104,7 +104,7 @@ const Index = () => {
             </p>
           )}
           {measures?.map((m, idx) => (
-            <article key={m.id} className={idx < measures.length - 1 ? "mb-16" : ""}>
+            <article key={m.id} className={idx < measures.length - 1 ? "mb-6" : ""}>
               <ActuCard measure={m} />
             </article>
           ))}
