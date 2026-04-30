@@ -160,40 +160,107 @@ const getUserMessage = (voteValue: number, distribution: number[]) => {
   return "Ton avis est peu répandu, mais il compte autant.";
 };
 
-const Barometer = () => {
+const BarometerActionRow = ({
+  measure,
+  showBarometer,
+}: {
+  measure: Measure;
+  showBarometer: boolean;
+}) => {
   const [vote, setVote] = useState<VoteKey | null>(null);
+  const [saved, setSaved] = useState(false);
   const selected = VOTE_ITEMS.find((v) => v.key === vote);
+  const storageKey = `saved_${measure.id}`;
+
+  useEffect(() => {
+    try {
+      setSaved(localStorage.getItem(storageKey) === "1");
+    } catch {
+      /* noop */
+    }
+  }, [storageKey]);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: measure.title ?? "Legit",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch {
+      /* user cancelled or failed, fall through to clipboard */
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast("Lien copié");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
+  const toggleSaved = () => {
+    setSaved((prev) => {
+      const next = !prev;
+      try {
+        if (next) localStorage.setItem(storageKey, "1");
+        else localStorage.removeItem(storageKey);
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   return (
-    <div className="px-4 mt-3">
-      <div className="flex items-center">
-        <span className="text-xs text-slate-400 mr-3">Ton avis</span>
+    <div className="mt-2">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-5">
-          {VOTE_ITEMS.map(({ key, Icon, activeColor }) => {
-            const isSelected = vote === key;
-            const colorClass = isSelected ? activeColor : "text-slate-300";
-            return (
-              <button
-                key={key}
-                onClick={() => setVote(isSelected ? null : key)}
-                className={`transition-colors duration-150 ${colorClass}`}
-                aria-label={key}
-              >
-                <Icon size={22} strokeWidth={2} />
-              </button>
-            );
-          })}
+          {showBarometer &&
+            VOTE_ITEMS.map(({ key, Icon, activeColor }) => {
+              const isSelected = vote === key;
+              const colorClass = isSelected ? activeColor : "text-slate-900";
+              return (
+                <button
+                  key={key}
+                  onClick={() => setVote(isSelected ? null : key)}
+                  className={`transition-colors duration-150 ${colorClass}`}
+                  aria-label={key}
+                >
+                  <Icon className="w-5 h-5" strokeWidth={2} />
+                </button>
+              );
+            })}
+        </div>
+        <div className="flex-1" />
+        <div className="flex items-center gap-3">
+          <button aria-label="Partager" onClick={handleShare} className="text-slate-900">
+            <Send className="w-4 h-4" strokeWidth={1.75} />
+          </button>
+          <button
+            aria-label={saved ? "Retirer des enregistrés" : "Enregistrer"}
+            onClick={toggleSaved}
+            className="text-slate-900"
+          >
+            {saved ? (
+              <BookmarkCheck className="w-4 h-4" strokeWidth={1.75} fill="#3c00cf" stroke="#3c00cf" />
+            ) : (
+              <Bookmark className="w-4 h-4" strokeWidth={1.75} />
+            )}
+          </button>
         </div>
       </div>
 
       <AnimatePresence>
-        {vote !== null && selected && (
+        {showBarometer && vote !== null && selected && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="mt-3"
+            className="px-4 pb-2"
           >
             <div className="flex w-full h-2 rounded-full overflow-hidden">
               {VOTE_ITEMS.map((it, i) => (
