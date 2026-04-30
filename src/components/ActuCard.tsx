@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,8 +9,10 @@ import {
   Check,
   Send,
   Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import type { Measure, SimulatorConfig } from "@/lib/supabaseClient";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -46,9 +48,6 @@ const Header = ({ m }: { m: Measure }) => (
       <span className="text-sm font-medium text-gray-900">{m.creator_handle}</span>
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white bg-gradient-to-r from-[#b90051] to-[#3c00cf]">
-        {m.theme}
-      </span>
       <span
         className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[m.status] ?? "text-white"}`}
         style={{ backgroundColor: STATUS_BG[m.status] ?? "#64748b" }}
@@ -161,40 +160,107 @@ const getUserMessage = (voteValue: number, distribution: number[]) => {
   return "Ton avis est peu répandu, mais il compte autant.";
 };
 
-const Barometer = () => {
+const BarometerActionRow = ({
+  measure,
+  showBarometer,
+}: {
+  measure: Measure;
+  showBarometer: boolean;
+}) => {
   const [vote, setVote] = useState<VoteKey | null>(null);
+  const [saved, setSaved] = useState(false);
   const selected = VOTE_ITEMS.find((v) => v.key === vote);
+  const storageKey = `saved_${measure.id}`;
+
+  useEffect(() => {
+    try {
+      setSaved(localStorage.getItem(storageKey) === "1");
+    } catch {
+      /* noop */
+    }
+  }, [storageKey]);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: measure.title ?? "Legit",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch {
+      /* user cancelled or failed, fall through to clipboard */
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      toast("Lien copié");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
+  const toggleSaved = () => {
+    setSaved((prev) => {
+      const next = !prev;
+      try {
+        if (next) localStorage.setItem(storageKey, "1");
+        else localStorage.removeItem(storageKey);
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   return (
-    <div className="px-4 mt-3">
-      <div className="flex items-center">
-        <span className="text-xs text-slate-400 mr-3">Ton avis</span>
+    <div className="mt-2">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-5">
-          {VOTE_ITEMS.map(({ key, Icon, activeColor }) => {
-            const isSelected = vote === key;
-            const colorClass = isSelected ? activeColor : "text-slate-300";
-            return (
-              <button
-                key={key}
-                onClick={() => setVote(isSelected ? null : key)}
-                className={`transition-colors duration-150 ${colorClass}`}
-                aria-label={key}
-              >
-                <Icon size={22} strokeWidth={2} />
-              </button>
-            );
-          })}
+          {showBarometer &&
+            VOTE_ITEMS.map(({ key, Icon, activeColor }) => {
+              const isSelected = vote === key;
+              const colorClass = isSelected ? activeColor : "text-slate-900";
+              return (
+                <button
+                  key={key}
+                  onClick={() => setVote(isSelected ? null : key)}
+                  className={`transition-colors duration-150 ${colorClass}`}
+                  aria-label={key}
+                >
+                  <Icon className="w-5 h-5" strokeWidth={2} />
+                </button>
+              );
+            })}
+        </div>
+        <div className="flex-1" />
+        <div className="flex items-center gap-3">
+          <button aria-label="Partager" onClick={handleShare} className="text-slate-900">
+            <Send className="w-4 h-4" strokeWidth={1.75} />
+          </button>
+          <button
+            aria-label={saved ? "Retirer des enregistrés" : "Enregistrer"}
+            onClick={toggleSaved}
+            className="text-slate-900"
+          >
+            {saved ? (
+              <BookmarkCheck className="w-4 h-4" strokeWidth={1.75} fill="#3c00cf" stroke="#3c00cf" />
+            ) : (
+              <Bookmark className="w-4 h-4" strokeWidth={1.75} />
+            )}
+          </button>
         </div>
       </div>
 
       <AnimatePresence>
-        {vote !== null && selected && (
+        {showBarometer && vote !== null && selected && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="mt-3"
+            className="px-4 pb-2"
           >
             <div className="flex w-full h-2 rounded-full overflow-hidden">
               {VOTE_ITEMS.map((it, i) => (
@@ -269,13 +335,13 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
 
   return (
     <div className="bg-white border border-slate-100 rounded-lg mx-1 p-3 mt-3">
-      <div className="inline-flex bg-slate-100 rounded-full p-0.5">
+      <div className="grid grid-cols-2 bg-slate-100 rounded-full p-0.5 w-full">
         {(["moi", "be"] as const).map((k) => (
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`text-xs px-3 py-1.5 rounded-full transition ${
-              tab === k ? "bg-white shadow-sm text-slate-900 font-medium" : "text-slate-600"
+            className={`text-xs px-3 py-1.5 rounded-full transition text-center ${
+              tab === k ? "bg-white shadow-sm text-slate-900 font-semibold" : "text-slate-600"
             }`}
           >
             {k === "moi" ? "Pour moi" : "Pour la Belgique"}
@@ -309,7 +375,13 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
           </div>
         ) : (
           <div className="space-y-2 text-slate-700">
-            <div className="text-sm font-medium">{belgique.budget}</div>
+            <div
+              className={`text-2xl font-bold ${
+                /[−-]/.test(belgique.budget.trim().charAt(0)) ? "text-rose-600" : "text-emerald-600"
+              }`}
+            >
+              {belgique.budget}
+            </div>
             <div className="text-sm">{renderRedistribution(belgique.redistribution)}</div>
             {belgique.angles_morts?.length > 0 && (
               <div className="pt-1">
@@ -333,18 +405,6 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
   );
 };
 
-const ActionRow = () => (
-  <div className="px-4 mt-3 flex items-center">
-    <button aria-label="Partager" className="text-slate-900">
-      <Send className="w-5 h-5" strokeWidth={1.75} />
-    </button>
-    <div className="flex-1" />
-    <button aria-label="Enregistrer" className="text-slate-900">
-      <Bookmark className="w-5 h-5" strokeWidth={1.75} />
-    </button>
-  </div>
-);
-
 export const ActuCard = ({ measure }: { measure: Measure }) => (
   <div className="bg-white shadow-sm border border-slate-100 rounded-lg overflow-hidden">
     <Header m={measure} />
@@ -352,8 +412,7 @@ export const ActuCard = ({ measure }: { measure: Measure }) => (
     {measure.has_simulator && measure.simulator_config && (
       <Simulator config={measure.simulator_config} />
     )}
-    {measure.has_barometer && <Barometer />}
-    <ActionRow />
-    <div className="h-4" />
+    <BarometerActionRow measure={measure} showBarometer={!!measure.has_barometer} />
+    <div className="h-2" />
   </div>
 );
