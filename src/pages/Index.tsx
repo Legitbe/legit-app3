@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Newspaper, User } from "lucide-react";
+import { Newspaper, User, Search, X } from "lucide-react";
 import { ActuCard } from "@/components/ActuCard";
 import { supabase, type Measure } from "@/lib/supabaseClient";
 
@@ -60,6 +60,27 @@ const BottomNav = ({ activeKey }: { activeKey: string }) => {
 const Index = () => {
   const [measures, setMeasures] = useState<Measure[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [hideHeader, setHideHeader] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastScrollY.current;
+      if (y < 10) {
+        setHideHeader(false);
+      } else if (delta > 6) {
+        setHideHeader(true);
+      } else if (delta < -6) {
+        setHideHeader(false);
+      }
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,13 +103,51 @@ const Index = () => {
     };
   }, []);
 
+  const filtered = measures?.filter((m) => {
+    if (!query.trim()) return true;
+    const q = query.toLowerCase();
+    return (
+      (m.title ?? "").toLowerCase().includes(q) ||
+      (m.theme ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <main className="min-h-[100dvh] w-full bg-slate-50 flex justify-center">
-      <div className="relative w-full max-w-[430px] min-h-[100dvh] bg-slate-50 pb-24">
-        <header className="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md border-b border-gray-200 px-4 py-3">
-          <h1 className="text-lg font-bold bg-gradient-to-r from-[#b90051] to-blue-600 bg-clip-text text-transparent">
-            Actu
-          </h1>
+      <div
+        className="relative w-full max-w-[430px] min-h-[100dvh] bg-slate-50 pb-24"
+        style={{ scrollSnapType: "y proximity" }}
+      >
+        <header
+          className={`sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md border-b border-gray-200 px-4 py-3 transition-transform duration-300 ${
+            hideHeader ? "-translate-y-full" : "translate-y-0"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-[#b90051] to-[#3c00cf] bg-clip-text text-transparent">
+              Actu
+            </h1>
+            <button
+              aria-label={searchOpen ? "Fermer la recherche" : "Rechercher"}
+              onClick={() => {
+                setSearchOpen((s) => !s);
+                if (searchOpen) setQuery("");
+              }}
+              className="text-slate-700"
+            >
+              {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            </button>
+          </div>
+          {searchOpen && (
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher un thème ou un titre…"
+              className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#3c00cf]/30"
+            />
+          )}
         </header>
 
         <div className="px-3 pt-4">
@@ -98,13 +157,17 @@ const Index = () => {
           {error && (
             <p className="text-center text-sm text-red-600 py-12">Erreur : {error}</p>
           )}
-          {measures && measures.length === 0 && !error && (
+          {filtered && filtered.length === 0 && !error && measures && (
             <p className="text-center text-sm text-slate-500 py-12">
-              Aucune mesure publiée pour l'instant.
+              {query ? "Aucun résultat." : "Aucune mesure publiée pour l'instant."}
             </p>
           )}
-          {measures?.map((m, idx) => (
-            <article key={m.id} className={idx < measures.length - 1 ? "mb-6" : ""}>
+          {filtered?.map((m, idx) => (
+            <article
+              key={m.id}
+              className={idx < filtered.length - 1 ? "mb-6" : ""}
+              style={{ scrollSnapAlign: "start" }}
+            >
               <ActuCard measure={m} />
             </article>
           ))}
