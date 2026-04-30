@@ -1,12 +1,28 @@
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Minus, X, Check, Share2, Bookmark } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Minus,
+  X,
+  Check,
+  Send,
+  Bookmark,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Measure, SimulatorConfig } from "@/lib/supabaseClient";
 
 const STATUS_BADGE: Record<string, string> = {
-  mesure: "bg-purple-100 text-purple-700",
-  actu: "bg-pink-100 text-[#b90051]",
-  proposition: "bg-orange-100 text-orange-700",
+  actu: "text-white",
+  proposition: "text-white",
+  mesure: "text-white",
+};
+
+const STATUS_BG: Record<string, string> = {
+  actu: "#b90051",
+  proposition: "#7a0090",
+  mesure: "#3c00cf",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -30,13 +46,12 @@ const Header = ({ m }: { m: Measure }) => (
       <span className="text-sm font-medium text-gray-900">{m.creator_handle}</span>
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white bg-gradient-to-r from-[#b90051] to-blue-600">
+      <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white bg-gradient-to-r from-[#b90051] to-[#3c00cf]">
         {m.theme}
       </span>
       <span
-        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-          STATUS_BADGE[m.status] ?? "bg-slate-100 text-slate-700"
-        }`}
+        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[m.status] ?? "text-white"}`}
+        style={{ backgroundColor: STATUS_BG[m.status] ?? "#64748b" }}
       >
         {STATUS_LABEL[m.status] ?? m.status}
       </span>
@@ -63,7 +78,7 @@ const Carousel = ({ slides }: { slides: Measure["slides"] }) => {
       <div className="relative w-full">
         <div
           ref={scrollerRef}
-          className="w-full aspect-[4/5] overflow-x-auto snap-x snap-mandatory flex scrollbar-hide rounded-xl bg-slate-100"
+          className="w-full aspect-[4/5] overflow-x-auto snap-x snap-mandatory flex scrollbar-hide rounded-lg bg-slate-100"
           style={{ touchAction: "pan-x" }}
           onScroll={(e) => {
             const el = e.currentTarget;
@@ -126,17 +141,29 @@ const Carousel = ({ slides }: { slides: Measure["slides"] }) => {
 
 type VoteKey = "x" | "down" | "neutral" | "up" | "check";
 
-const VOTE_ITEMS: { key: VoteKey; Icon: typeof X; activeColor: string; bg: string }[] = [
-  { key: "x", Icon: X, activeColor: "text-red-600", bg: "bg-red-600" },
-  { key: "down", Icon: ChevronDown, activeColor: "text-orange-400", bg: "bg-orange-400" },
-  { key: "neutral", Icon: Minus, activeColor: "text-yellow-400", bg: "bg-yellow-400" },
-  { key: "up", Icon: ChevronUp, activeColor: "text-green-400", bg: "bg-green-400" },
-  { key: "check", Icon: Check, activeColor: "text-green-700", bg: "bg-green-700" },
+const VOTE_ITEMS: { key: VoteKey; Icon: typeof X; activeColor: string; bg: string; value: number }[] = [
+  { key: "x", Icon: X, activeColor: "text-red-600", bg: "bg-red-600", value: 1 },
+  { key: "down", Icon: ChevronDown, activeColor: "text-orange-500", bg: "bg-orange-500", value: 2 },
+  { key: "neutral", Icon: Minus, activeColor: "text-yellow-400", bg: "bg-yellow-400", value: 3 },
+  { key: "up", Icon: ChevronUp, activeColor: "text-green-400", bg: "bg-green-400", value: 4 },
+  { key: "check", Icon: Check, activeColor: "text-green-700", bg: "bg-green-700", value: 5 },
 ];
 const VOTE_PCT = [12, 18, 20, 28, 22];
 
+const getUserMessage = (voteValue: number, distribution: number[]) => {
+  const disagreeTotal = distribution[0] + distribution[1];
+  const agreeTotal = distribution[3] + distribution[4];
+  if (voteValue === 3) return "Cette question divise vraiment pour l'instant";
+  if (disagreeTotal >= 45 && agreeTotal >= 45) return "Cette mesure divise les avis";
+  if (voteValue <= 2 && disagreeTotal >= 50) return "Beaucoup pensent comme toi sur cette question";
+  if (voteValue >= 4 && agreeTotal >= 50) return "la plupart des gens qui ont voté partagent ton avis";
+  if (voteValue <= 2) return "Tu fais partie d'une voix minoritaire ici";
+  return "Ton avis est peu répandu, mais il compte autant.";
+};
+
 const Barometer = () => {
   const [vote, setVote] = useState<VoteKey | null>(null);
+  const selected = VOTE_ITEMS.find((v) => v.key === vote);
 
   return (
     <div className="px-4 mt-3">
@@ -145,12 +172,7 @@ const Barometer = () => {
         <div className="flex items-center gap-5">
           {VOTE_ITEMS.map(({ key, Icon, activeColor }) => {
             const isSelected = vote === key;
-            const hasSelection = vote !== null;
-            const colorClass = isSelected
-              ? activeColor
-              : hasSelection
-              ? "text-slate-200"
-              : "text-slate-300";
+            const colorClass = isSelected ? activeColor : "text-slate-300";
             return (
               <button
                 key={key}
@@ -158,7 +180,7 @@ const Barometer = () => {
                 className={`transition-colors duration-150 ${colorClass}`}
                 aria-label={key}
               >
-                <Icon size={18} strokeWidth={2} />
+                <Icon size={22} strokeWidth={2} />
               </button>
             );
           })}
@@ -166,7 +188,7 @@ const Barometer = () => {
       </div>
 
       <AnimatePresence>
-        {vote !== null && (
+        {vote !== null && selected && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -184,11 +206,51 @@ const Barometer = () => {
                 <span key={i}>{p}%</span>
               ))}
             </div>
+            <p className="text-sm text-slate-500 mt-2">
+              {getUserMessage(selected.value, VOTE_PCT)}
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
+};
+
+const ConfidenceDots = ({ confidence }: { confidence: number }) => (
+  <div className="flex items-center gap-1 mt-2">
+    <span className="text-[11px] text-slate-500 mr-1">Fiabilité</span>
+    {Array.from({ length: 5 }).map((_, i) => (
+      <span
+        key={i}
+        className={`inline-block w-1.5 h-1.5 rounded-full ${
+          i < confidence ? "bg-slate-700" : "bg-slate-200"
+        }`}
+      />
+    ))}
+  </div>
+);
+
+const renderRedistribution = (text: string) => {
+  // Highlight fragment after "reversé" or "aux"
+  const reMatch = text.match(/(.*?\breversé\s+)(.+)/i);
+  if (reMatch) {
+    return (
+      <>
+        {reMatch[1]}
+        <span className="text-emerald-600 font-medium">{reMatch[2]}</span>
+      </>
+    );
+  }
+  const auxMatch = text.match(/(.*?\baux\s+)(.+)/i);
+  if (auxMatch) {
+    return (
+      <>
+        {auxMatch[1]}
+        <span className="text-emerald-600 font-medium">{auxMatch[2]}</span>
+      </>
+    );
+  }
+  return text;
 };
 
 const Simulator = ({ config }: { config: SimulatorConfig }) => {
@@ -199,15 +261,27 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
   const raw = value * formula.coefficient;
   const isNegative = formula.direction === "negative";
   const sign = isNegative ? "−" : "+";
-  const colorClass = isNegative ? "text-red-600" : "text-green-600";
+  const colorClass = isNegative ? "text-rose-600" : "text-emerald-600";
   const label = isNegative ? output.label_negative ?? "impact" : output.label_positive ?? "impact";
   const formatted = `${sign}${Math.abs(raw).toLocaleString("fr-BE", { maximumFractionDigits: 1 })} ${output.unit}`;
 
   const pct = ((value - input.min) / (input.max - input.min)) * 100;
 
   return (
-    <div className="bg-white border border-slate-100 rounded-xl mx-4 p-4 mt-3">
-      <h3 className="text-sm font-semibold text-slate-900">Simulateur d'impact</h3>
+    <div className="bg-white border border-slate-100 rounded-lg mx-1 p-3 mt-3">
+      <div className="inline-flex bg-slate-100 rounded-full p-0.5">
+        {(["moi", "be"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`text-xs px-3 py-1.5 rounded-full transition ${
+              tab === k ? "bg-white shadow-sm text-slate-900 font-medium" : "text-slate-600"
+            }`}
+          >
+            {k === "moi" ? "Pour moi" : "Pour la Belgique"}
+          </button>
+        ))}
+      </div>
 
       <div className="mt-3 flex justify-between items-center">
         <span className="text-xs text-slate-600">{input.label}</span>
@@ -226,53 +300,30 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
         style={{ ["--range-progress" as string]: `${pct}%` }}
       />
 
-      <div className="mt-4 flex gap-2">
-        {(["moi", "be"] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={`text-xs px-3 py-1.5 rounded-full transition ${
-              tab === k
-                ? "bg-slate-900 text-white"
-                : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {k === "moi" ? "Pour moi" : "Pour la Belgique"}
-          </button>
-        ))}
-      </div>
-
       <div className="mt-4">
         {tab === "moi" ? (
           <div>
-            <div className={`text-2xl font-bold ${colorClass}`}>{formatted}</div>
-            <div className="text-xs text-slate-600 mt-0.5">{label}</div>
-            <div className="flex items-center gap-1 mt-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`inline-block w-1.5 h-1.5 rounded-full ${
-                    i < confidence ? "bg-slate-700" : "bg-slate-200"
-                  }`}
-                />
-              ))}
-              <span className="text-[10px] text-slate-400 ml-1">{confidence}/5 confiance</span>
-            </div>
+            <div className={`text-3xl font-bold ${colorClass}`}>{formatted}</div>
+            <div className="text-sm text-slate-500 mt-0.5">{label}</div>
+            <ConfidenceDots confidence={confidence} />
           </div>
         ) : (
-          <div className="space-y-2 text-xs text-slate-700">
-            <div><span className="font-semibold">Budget : </span>{belgique.budget}</div>
-            <div><span className="font-semibold">Redistribution : </span>{belgique.redistribution}</div>
+          <div className="space-y-2 text-slate-700">
+            <div className="text-sm font-medium">{belgique.budget}</div>
+            <div className="text-sm">{renderRedistribution(belgique.redistribution)}</div>
             {belgique.angles_morts?.length > 0 && (
               <div className="pt-1">
-                <div className="text-[11px] text-slate-500 mb-1">⚠️ Ce qu'on ne mesure pas :</div>
+                <div className="text-xs text-slate-400 italic mb-1">
+                  Ce qui n'est pas pris en compte
+                </div>
                 <ul className="list-none space-y-1">
                   {belgique.angles_morts.map((a, i) => (
-                    <li key={i} className="italic text-slate-500">— {a}</li>
+                    <li key={i} className="italic text-slate-500 text-xs">— {a}</li>
                   ))}
                 </ul>
               </div>
             )}
+            <ConfidenceDots confidence={confidence} />
           </div>
         )}
       </div>
@@ -284,20 +335,18 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
 
 const ActionRow = () => (
   <div className="px-4 mt-3 flex items-center">
-    <button className="rounded-full border border-slate-200 text-slate-500 text-xs px-3 py-1.5 inline-flex items-center gap-1.5">
-      <Share2 size={14} strokeWidth={1.75} />
-      Partager
+    <button aria-label="Partager" className="text-slate-900">
+      <Send className="w-5 h-5" strokeWidth={1.75} />
     </button>
     <div className="flex-1" />
-    <button className="rounded-full border border-slate-200 text-slate-500 text-xs px-3 py-1.5 inline-flex items-center gap-1.5">
-      <Bookmark size={14} strokeWidth={1.75} />
-      Enregistrer
+    <button aria-label="Enregistrer" className="text-slate-900">
+      <Bookmark className="w-5 h-5" strokeWidth={1.75} />
     </button>
   </div>
 );
 
 export const ActuCard = ({ measure }: { measure: Measure }) => (
-  <div className="bg-white shadow-sm border border-slate-100 rounded-2xl overflow-hidden">
+  <div className="bg-white shadow-sm border border-slate-100 rounded-lg overflow-hidden">
     <Header m={measure} />
     <Carousel slides={measure.slides} />
     {measure.has_simulator && measure.simulator_config && (
