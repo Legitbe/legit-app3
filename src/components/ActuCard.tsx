@@ -399,18 +399,6 @@ const Simulator = ({ config }: { config: SimulatorConfig }) => {
   );
 };
 
-const ActionRow = () => (
-  <div className="px-4 mt-3 flex items-center">
-    <button aria-label="Partager" className="text-slate-900">
-      <Send className="w-5 h-5" strokeWidth={1.75} />
-    </button>
-    <div className="flex-1" />
-    <button aria-label="Enregistrer" className="text-slate-900">
-      <Bookmark className="w-5 h-5" strokeWidth={1.75} />
-    </button>
-  </div>
-);
-
 export const ActuCard = ({ measure }: { measure: Measure }) => (
   <div className="bg-white shadow-sm border border-slate-100 rounded-lg overflow-hidden">
     <Header m={measure} />
@@ -418,8 +406,7 @@ export const ActuCard = ({ measure }: { measure: Measure }) => (
     {measure.has_simulator && measure.simulator_config && (
       <Simulator config={measure.simulator_config} />
     )}
-    {measure.has_barometer && <Barometer />}
-    <ActionRow />
-    <div className="h-4" />
+    <BarometerActionRow measure={measure} showBarometer={!!measure.has_barometer} />
+    <div className="h-2" />
   </div>
 );
