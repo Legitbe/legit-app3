@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,8 +9,10 @@ import {
   Check,
   Send,
   Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import type { Measure, SimulatorConfig } from "@/lib/supabaseClient";
 
 const STATUS_BADGE: Record<string, string> = {
