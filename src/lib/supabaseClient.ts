@@ -27,6 +27,7 @@ export interface Measure {
   creator_avatar_url: string | null;
   theme: string;
   status: MeasureStatus;
+  title?: string | null;
   slides: MeasureSlide[];
   has_barometer: boolean;
   has_simulator?: boolean;
