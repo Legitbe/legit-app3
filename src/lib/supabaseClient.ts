@@ -12,6 +12,15 @@ export type MeasureSlide = {
 
 export type MeasureStatus = "actu" | "mesure" | "proposition";
 
+export type SimulatorConfig = {
+  input: { label: string; unit: string; default: number; min: number; max: number; step: number };
+  formula: { type: string; coefficient: number; direction: "negative" | "positive" };
+  output: { unit: string; label_negative?: string; label_positive?: string };
+  belgique: { budget: string; redistribution: string; angles_morts: string[] };
+  confidence: number;
+  source: string;
+};
+
 export interface Measure {
   id: string;
   creator_handle: string;
@@ -20,6 +29,8 @@ export interface Measure {
   status: MeasureStatus;
   slides: MeasureSlide[];
   has_barometer: boolean;
+  has_simulator?: boolean;
+  simulator_config?: SimulatorConfig | null;
   published: boolean;
   created_at: string;
 }
