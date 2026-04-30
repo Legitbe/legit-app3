@@ -48,9 +48,6 @@ const Header = ({ m }: { m: Measure }) => (
       <span className="text-sm font-medium text-gray-900">{m.creator_handle}</span>
     </div>
     <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold px-2.5 py-1 rounded-full text-white bg-gradient-to-r from-[#b90051] to-[#3c00cf]">
-        {m.theme}
-      </span>
       <span
         className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[m.status] ?? "text-white"}`}
         style={{ backgroundColor: STATUS_BG[m.status] ?? "#64748b" }}
